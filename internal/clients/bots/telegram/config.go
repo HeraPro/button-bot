@@ -19,7 +19,9 @@ var (
 )
 
 var (
-	greetingsText   = "Hi"
+	greetingsText = "This is button-bot for VK internship.\n" +
+		"You can test vk bot using this url: in develop mode.\n" +
+		"To start conversation, send any data."
 	firstLayerText  = "1st layer"
 	secondLayerText = "2nd layer"
 )
@@ -91,11 +93,6 @@ var (
 		}}
 
 	inlineKeyboards = map[string]*InlineKeyboardMarkup{
-		//"root_layer":      `{"inline_keyboard":[[{"text":"Url Layer","callback_data":"url_layer"},{"text":"Switch Layer","callback_data":"switch_layer"}],[{"text":"Turn Layer","callback_data":"turn_layer"},{"text":"Something?","callback_data":"something_layer"}]]}`,
-		//"url_layer":       `{"inline_keyboard":[[{"text":"vkButton", "url":"vkButton.com"}],[{"text":"<-backButton", "callback_data":"root_layer"}]]}`,
-		//"switch_layer":    `{"inline_keyboard":[[{"text":"switch to", "switch_inline_query":"null"}],[{"text":"<-backButton", "callback_data":"root_layer"}]]}`,
-		//"turn_layer":      `{"inline_keyboard":[[{"text":"turn off WOW", "callback_data":"turn_off_WOW"},{"text":"turn on WOW", "callback_data":"turn_on_WOW"}],[{"text":"<-backButton", "callback_data":"root_layer"}]]}`,
-		//"something_layer": `{"inline_keyboard":[[{"text":"nothing", "callback_data": "nothing"}],[{"text":"<-backButton", "callback_data":"root_layer"}]]}`,
 		"root_layer":      rootKeyboard,
 		"url_layer":       urlKeyboard,
 		"switch_layer":    switchKeyboard,

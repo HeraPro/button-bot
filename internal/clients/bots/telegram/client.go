@@ -150,7 +150,7 @@ func (b Bot) Listen() {
 						ChatID:      update.CallbackQuery.Message.Chat.ID,
 						MessageID:   update.CallbackQuery.Message.MessageID,
 						Text:        firstLayerText,
-						ReplyMarkup: rootKeyboard,
+						ReplyMarkup: inlineKeyboards["root_layer"],
 					}
 					_, err = b.Send(req)
 					if err != nil {
@@ -170,12 +170,13 @@ func (b Bot) Listen() {
 					}
 					tired = false
 
+					//add keyboard man
 				case "nothing":
 					callbackText = "GG"
 					tired = false
 
 				default:
-					req := EditMessageTextRequest{
+					req := &EditMessageTextRequest{
 						ChatID:      update.CallbackQuery.Message.Chat.ID,
 						MessageID:   update.CallbackQuery.Message.MessageID,
 						Text:        secondLayerText,
