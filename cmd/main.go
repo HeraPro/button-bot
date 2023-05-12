@@ -5,14 +5,7 @@ import (
 	"tg-bot/internal/clients/bots"
 )
 
-var (
-	PORT  = os.Getenv("PORT")
-	TOKEN = os.Getenv("TOKEN_TELEGRAM")
-)
-
 func main() {
-	//()
-
-	tgBot := bots.NewBotTelegram(TOKEN)
+	tgBot := bots.NewBotTelegram(os.Getenv("TELEGRAM_TOKEN"))
 	tgBot.Listen()
 }

@@ -11,7 +11,6 @@ type Listener interface {
 	Listen()
 }
 
-//ping as init?
 func NewBotTelegram(token string) Listener {
 	bot := &telegram.Bot{
 		Token:  token,

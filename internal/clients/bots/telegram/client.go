@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -15,8 +16,22 @@ type Bot struct {
 	//buffer?
 }
 
-func (b Bot) Request(method, body string) (*ApiResponse, error) {
-	rawResp, err := b.Client.Post(method, "application/json", strings.NewReader(body))
+func (b Bot) GetMe() (*User, error) {
+	req := &GetMeRequest{}
+	apiResp, err := b.Send(req)
+	if err != nil {
+		return nil, err
+	}
+	var bot *User
+	err = json.Unmarshal(apiResp.Result, &bot)
+	if err != nil {
+		return nil, err
+	}
+	return bot, nil
+}
+
+func (b Bot) Request(method string, body io.Reader) (*ApiResponse, error) {
+	rawResp, err := b.Client.Post(method, "application/json", body)
 	if err != nil {
 		return nil, err
 	}
@@ -30,15 +45,31 @@ func (b Bot) Request(method, body string) (*ApiResponse, error) {
 	return apiResp, err
 }
 
-func (b Bot) GetUpdates(updateId, timeout int) ([]*Update, error) {
-	method := fmt.Sprintf(ENDPOINT, b.Token, GET_UPDATES)
-	body := fmt.Sprintf(`{"timeout": %d, "offset": %d}`, timeout, updateId)
-	apiResp, err := b.Request(method, body)
+func (b Bot) Send(req Request) (*ApiResponse, error) {
+	//what if i put this in config
+	method := fmt.Sprintf(ENDPOINT, b.Token, req.getMethod())
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	apiResp, err := b.Request(method, strings.NewReader(string(body)))
 	if err != nil {
 		return nil, err
 	} else if !apiResp.Ok {
 		resp := fmt.Sprintf("Error code: %d Description: %s", apiResp.ErrorCode, apiResp.Description)
 		return nil, errors.New(resp)
+	}
+	return apiResp, nil
+}
+
+func (b Bot) GetUpdates(updateId, timeout int) ([]*Update, error) {
+	req := &GetUpdatesRequest{
+		Offset:  updateId,
+		Timeout: timeout,
+	}
+	apiResp, err := b.Send(req)
+	if err != nil {
+		return nil, err
 	}
 
 	var updates []*Update
@@ -52,7 +83,11 @@ func (b Bot) GetUpdates(updateId, timeout int) ([]*Update, error) {
 
 func (b Bot) Listen() {
 	//ctx
-
+	bot, err := b.GetMe()
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Println(fmt.Sprintf("telegram bot username: %s", bot.Username))
 	//these two are jokes
 	var (
 		tired        bool
@@ -62,100 +97,95 @@ func (b Bot) Listen() {
 		updates, err := b.GetUpdates(updateId, timeout)
 		if err != nil {
 			log.Println(err)
-			err = nil
 		}
 
 		for _, update := range updates {
 			updateId = update.UpdateID + 1
 			if update.Message != nil {
-				method := fmt.Sprintf(ENDPOINT, b.Token, SEND_MESSAGE)
+				log.Println(fmt.Sprintf(
+					`{"username": "%s", "firstname": "%s", "text": "%s"}`,
+					update.Message.From.Username,
+					update.Message.From.FirstName,
+					update.Message.Text))
 				if update.Message.Entities != nil && update.Message.Entities[0].Type == "bot_command" && update.Message.Text == "/start" {
-					body := fmt.Sprintf(`{"chat_id":%d,"text":"Hi"}`, update.Message.Chat.ID)
-					_, err = b.Request(method, body)
+					req := &SendMessageRequest{
+						ChatID: update.Message.Chat.ID,
+						Text:   greetingsText,
+					}
+					_, err = b.Send(req)
 					if err != nil {
 						log.Println(err)
-						err = nil
 					}
 				} else {
-					//todo reply
-					body := fmt.Sprintf(`{"chat_id":%d,"text":"1st layer","reply_markup":%s}`,
-						update.Message.Chat.ID,
-						inlineKeyboards["root_layer"])
-					_, err = b.Request(method, body)
+					req := &SendMessageRequest{
+						ChatID:      update.Message.Chat.ID,
+						Text:        firstLayerText,
+						ReplyMarkup: inlineKeyboards["root_layer"],
+					}
+					_, err = b.Send(req)
 					if err != nil {
 						log.Println(err)
-						err = nil
 					}
 				}
 			} else if update.CallbackQuery != nil {
-				method := fmt.Sprintf(ENDPOINT, b.Token, ANSWER_CALLBACK_QUERY)
-				var body string
-				if !tired {
-					body = fmt.Sprintf(`{"callback_query_id": "%s","text": "%s"}`, update.CallbackQuery.ID, callbackText)
-				} else {
-					body = fmt.Sprintf(`{"callback_query_id": "%s"}`, update.CallbackQuery.ID)
-
+				log.Println(fmt.Sprintf(
+					`{"username": "%s", "firstname": "%s", "callback_date": "%s"}`,
+					update.CallbackQuery.From.Username,
+					update.CallbackQuery.From.FirstName,
+					update.CallbackQuery.Data))
+				req := &AnswerCallbackQueryRequest{
+					CallbackQueryID: update.CallbackQuery.ID,
 				}
-				_, err = b.Request(method, body)
+				if !tired {
+					req.Text = callbackText
+				}
+				_, err = b.Send(req)
 				if err != nil {
 					log.Println(err)
-					err = nil
 				}
-				method = fmt.Sprintf(ENDPOINT, b.Token, EDIT_MESSAGE_TEXT)
-
-				//switch, data, url, url_login
-
-				//methods := map[string]string{}
 
 				switch update.CallbackQuery.Data {
 				case "root_layer":
-					body = fmt.Sprintf(`{"chat_id":%d, "message_id":%d, "text":%s,"reply_markup":%s}`,
-						update.CallbackQuery.Message.Chat.ID,
-						update.CallbackQuery.Message.MessageID,
-						`"1st layer"`,
-						inlineKeyboards["root_layer"])
+					req := &EditMessageTextRequest{
+						ChatID:      update.CallbackQuery.Message.Chat.ID,
+						MessageID:   update.CallbackQuery.Message.MessageID,
+						Text:        firstLayerText,
+						ReplyMarkup: rootKeyboard,
+					}
+					_, err = b.Send(req)
+					if err != nil {
+						log.Println(err)
+					}
 
 				case "turn_off_WOW":
 					if callbackText != "GG" {
 						tired = true
+					} else {
+						callbackText = "NOT_WOW"
 					}
-					body = fmt.Sprintf(`{"chat_id":%d,"message_id":%d,"text":%s,"reply_markup":%s}`,
-						update.CallbackQuery.Message.Chat.ID,
-						update.CallbackQuery.Message.MessageID,
-						`"2nd layer"`,
-						inlineKeyboards["turn_layer"])
 
 				case "turn_on_WOW":
+					if callbackText != "WOW" {
+						callbackText = "WOW"
+					}
 					tired = false
-					body = fmt.Sprintf(`{"chat_id":%d,"message_id":%d,"text":%s,"reply_markup":%s}`,
-						update.CallbackQuery.Message.Chat.ID,
-						update.CallbackQuery.Message.MessageID,
-						`"2nd layer"`,
-						inlineKeyboards["turn_layer"])
 
 				case "nothing":
 					callbackText = "GG"
 					tired = false
-					body = fmt.Sprintf(`{"chat_id":%d,"message_id":%d,"text":%s,"reply_markup":%s}`,
-						update.CallbackQuery.Message.Chat.ID,
-						update.CallbackQuery.Message.MessageID,
-						`"2nd layer"`,
-						inlineKeyboards["something_layer"])
 
 				default:
-					body = fmt.Sprintf(`{"chat_id":%d,"message_id":%d,"text":%s,"reply_markup":%s}`,
-						update.CallbackQuery.Message.Chat.ID,
-						update.CallbackQuery.Message.MessageID,
-						`"2nd layer"`,
-						inlineKeyboards[update.CallbackQuery.Data])
+					req := EditMessageTextRequest{
+						ChatID:      update.CallbackQuery.Message.Chat.ID,
+						MessageID:   update.CallbackQuery.Message.MessageID,
+						Text:        secondLayerText,
+						ReplyMarkup: inlineKeyboards[update.CallbackQuery.Data],
+					}
+					_, err = b.Send(req)
+					if err != nil {
+						log.Println(err)
+					}
 				}
-
-				_, err = b.Request(method, body)
-
-				if err != nil {
-					log.Println(err)
-				}
-
 			}
 		}
 	}
