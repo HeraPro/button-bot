@@ -1,5 +1,8 @@
 package telegram
 
+// here you can find all things that can be used across this package, mostly it's structures for common use
+
+// api and methods that can be compiled
 const (
 	ENDPOINT              = `https://api.telegram.org/bot%s/%s`
 	GET_UPDATES           = "getUpdates"
@@ -9,23 +12,22 @@ const (
 	GET_ME                = "getMe"
 )
 
-type Request interface {
-	getMethod() string
-}
-
+// getUpdates params
+// can be determined in running mode
 var (
 	updateId = 0
 	timeout  = 60
 )
 
+// some text provided for bot
 var (
 	greetingsText = "This is button-bot for VK internship.\n" +
-		"You can test vk bot using this url: in develop mode.\n" +
 		"To start conversation, send any data."
 	firstLayerText  = "1st layer"
 	secondLayerText = "2nd layer"
 )
 
+// buttons
 var (
 	urlLayerButton = &InlineKeyboardButton{
 		Text:         "Url Layer",
@@ -68,6 +70,8 @@ var (
 		CallbackData: "nothing",
 	}
 )
+
+// keyboards and map of them for fast access (and null if not provided)
 var (
 	rootKeyboard = &InlineKeyboardMarkup{
 		InlineKeyboard: [][]*InlineKeyboardButton{

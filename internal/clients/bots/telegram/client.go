@@ -16,6 +16,7 @@ type Bot struct {
 	//buffer?
 }
 
+// GetMe provides information about used bot
 func (b Bot) GetMe() (*User, error) {
 	req := &GetMeRequest{}
 	apiResp, err := b.Send(req)
@@ -30,6 +31,9 @@ func (b Bot) GetMe() (*User, error) {
 	return bot, nil
 }
 
+// Request method implementing transport layer and validates if req is sent successfully.
+// method string must represent api endpoint of telegram
+// body io.Reader must be json-value in any form that is readable
 func (b Bot) Request(method string, body io.Reader) (*ApiResponse, error) {
 	rawResp, err := b.Client.Post(method, "application/json", body)
 	if err != nil {
@@ -45,6 +49,8 @@ func (b Bot) Request(method string, body io.Reader) (*ApiResponse, error) {
 	return apiResp, err
 }
 
+// Send method is a wrapper of Request method, validates if response is bad
+// req Request represents DTO for determined endpoint
 func (b Bot) Send(req Request) (*ApiResponse, error) {
 	//what if i put this in config
 	method := fmt.Sprintf(ENDPOINT, b.Token, req.getMethod())
@@ -62,6 +68,9 @@ func (b Bot) Send(req Request) (*ApiResponse, error) {
 	return apiResp, nil
 }
 
+// GetUpdates method represents the telegram api endpoint of same name
+// updateId int is offset (param), allows to start getting updates starting from certain one
+// timeout int is param that allows you to postpone response if there's no update yet
 func (b Bot) GetUpdates(updateId, timeout int) ([]*Update, error) {
 	req := &GetUpdatesRequest{
 		Offset:  updateId,
@@ -81,8 +90,8 @@ func (b Bot) GetUpdates(updateId, timeout int) ([]*Update, error) {
 	return updates, nil
 }
 
+// Listen method is determined for business layer. It is potentially in todos.
 func (b Bot) Listen() {
-	//ctx
 	bot, err := b.GetMe()
 	if err != nil {
 		log.Panic(err)

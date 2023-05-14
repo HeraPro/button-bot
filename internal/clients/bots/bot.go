@@ -3,11 +3,10 @@ package bots
 import (
 	"net/http"
 	"tg-bot/internal/clients/bots/telegram"
-	"tg-bot/internal/clients/bots/vk"
 )
 
+// Listener to abstract from the implementation of the client, potentially to use business logic for the vk bot
 type Listener interface {
-	//Listen(ctx context.Context)
 	Listen()
 }
 
@@ -16,11 +15,5 @@ func NewBotTelegram(token string) Listener {
 		Token:  token,
 		Client: http.DefaultClient,
 	}
-	return bot
-}
-
-//token?
-func NewBotVK() Listener {
-	bot := &vk.Bot{}
 	return bot
 }

@@ -4,12 +4,18 @@ import (
 	"encoding/json"
 )
 
+// ApiResponse common response from telegram api
 type ApiResponse struct {
 	Ok          bool            `json:"ok"`
 	Result      json.RawMessage `json:"result,omitempty"`
 	ErrorCode   int             `json:"error_code,omitempty"`
 	Description string          `json:"description,omitempty"`
 	// Parameters (read tg api spec)
+}
+
+// Request is a wrapper for api endpoint
+type Request interface {
+	getMethod() string
 }
 
 type GetMeRequest struct {
@@ -57,6 +63,9 @@ type EditMessageTextRequest struct {
 	DisableWebPagePreview bool                  `json:"disable_web_page_preview,omitempty"`
 	ReplyMarkup           *InlineKeyboardMarkup `json:"reply_markup,omitempty"`
 }
+
+// Structures from api telegram spec.
+// All structures that were presented are described in full, but some attributes could be commented out if they are not used or require additional implementing
 
 type Update struct {
 	UpdateID          int            `json:"update_id"`

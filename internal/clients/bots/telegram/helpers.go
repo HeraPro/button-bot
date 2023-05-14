@@ -1,5 +1,7 @@
 package telegram
 
+//some helper functions for template
+
 func (r GetUpdatesRequest) getMethod() string {
 	return GET_UPDATES
 }
