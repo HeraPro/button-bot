@@ -8,5 +8,5 @@ run:
 
 .PHONY: docker-run
 docker-run:
-	docker build --build-arg token=$TELEGRAM_TOKEN -t tg-bot-image  .
+	docker build --build-arg token=$(TELEGRAM_TOKEN) -t tg-bot-image  .
 	docker run -it --rm --name tg-bot-container tg-bot-image
